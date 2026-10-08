@@ -1,0 +1,8 @@
+.env
+.env.docker
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+media/
+staticfiles/

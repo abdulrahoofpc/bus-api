@@ -1,0 +1,13 @@
+Django==5.2.17
+djangorestframework==3.18.1
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.9.0
+django-filter==26.1
+psycopg[binary]==3.3.6
+dj-database-url==3.1.2
+openpyxl==3.1.5
+reportlab==4.4.10
+gunicorn==26.2.0
+whitenoise==6.9.0
+drf-spectacular==0.30.0
+drf-spectacular-sidecar==2026.9.1

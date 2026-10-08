@@ -1,0 +1,37 @@
+# Production: PostgreSQL + the FleetBooks API.
+#   copy .env.docker.example to .env.docker, edit it, then:
+#   docker compose --env-file .env.docker up -d --build
+# The API is then at http://localhost:8080/api/  (put it behind https for use over the internet)
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fleet
+      POSTGRES_USER: fleet
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fleet}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on: [db]
+    ports:
+      - "${APP_PORT:-8080}:8000"
+    environment:
+      DATABASE_URL: postgres://fleet:${POSTGRES_PASSWORD:-fleet}@db:5432/fleet
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-please-change-this-secret-key}
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8080}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8081}
+      DJANGO_SECURE_COOKIES: ${DJANGO_SECURE_COOKIES:-false}
+      DJANGO_MEDIA_ROOT: /srv/media
+      LOAD_DEMO_DATA: ${LOAD_DEMO_DATA:-false}
+    volumes:
+      - media:/srv/media          # uploaded receipts, photos and documents
+
+volumes:
+  pgdata:
+  media:

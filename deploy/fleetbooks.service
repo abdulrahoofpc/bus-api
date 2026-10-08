@@ -1,0 +1,14 @@
+# systemd service: copy to /etc/systemd/system/fleetbooks.service
+[Unit]
+Description=FleetBooks API
+After=network.target postgresql.service
+
+[Service]
+User=fleet
+Group=fleet
+WorkingDirectory=/srv/fleetbooks-backend
+ExecStart=/srv/fleetbooks-backend/.venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 2 --timeout 120
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
