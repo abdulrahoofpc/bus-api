@@ -8,7 +8,7 @@ driver management, assignments, activity log and notifications for office users
 """
 
 
-from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -232,6 +232,19 @@ def assign_trip(request):
                                  for d in Driver.objects.exclude(status="inactive").select_related("assigned_vehicle")]})
 
 
+def _page(qs, size, request):
+    """One page of rows: (total count, next page number or None, rows).
+    A page past the end is empty (not the last page again), so "load more" never repeats rows."""
+    paginator = Paginator(qs, size)
+    try:
+        page = paginator.page(request.query_params.get("page") or 1)
+    except PageNotAnInteger:
+        page = paginator.page(1)
+    except EmptyPage:
+        return paginator.count, None, []
+    return paginator.count, page.next_page_number() if page.has_next() else None, list(page.object_list)
+
+
 # ------------------------------------------------------------------ activity & notifications
 @api_view(["GET"])
 def activity(request):
@@ -245,9 +258,8 @@ def activity(request):
     q = request.query_params.get("q")
     if q:
         qs = qs.filter(Q(text__icontains=q) | Q(booking__booking_number__icontains=q))
-    page = Paginator(qs, 50).get_page(request.query_params.get("page"))
-    return Response({"count": page.paginator.count, "next": page.next_page_number() if page.has_next() else None,
-                     "results": [_activity(a) for a in page]})
+    count, nxt, rows = _page(qs, 50, request)
+    return Response({"count": count, "next": nxt, "results": [_activity(a) for a in rows]})
 
 
 @api_view(["GET"])
@@ -338,12 +350,11 @@ def resource_list(request, key):
         size = min(int(request.query_params.get("page_size", 30)), 200)
     except ValueError:
         size = 30
-    page = Paginator(qs, size).get_page(request.query_params.get("page"))
-    count = page.paginator.count
+    count, nxt, rows = _page(qs, size, request)
     return Response({
-        "count": count, "next": page.next_page_number() if page.has_next() else None, "period": period,
+        "count": count, "next": nxt, "period": period,
         "totals": [{"label": a, "value": b, "tone": c} for a, b, c in res.totals(totals, count)] if count else [],
-        "results": [_row(res, o, dj) for o in page.object_list],
+        "results": [_row(res, o, dj) for o in rows],
     })
 
 

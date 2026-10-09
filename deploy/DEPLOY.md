@@ -1,5 +1,20 @@
 # Deploy on a DigitalOcean droplet (Ubuntu 24.04, works on 512 MB RAM)
 
+## Quick way: one script (fresh droplet, public GitHub repo)
+In the droplet console (as root):
+
+```bash
+git clone https://github.com/abdulrahoofpc/bus-api.git /srv/fleetbooks-backend
+bash /srv/fleetbooks-backend/deploy/setup.sh
+cd /srv/fleetbooks-backend && sudo -u fleet .venv/bin/python manage.py createsuperuser
+```
+
+`setup.sh` adds swap, installs PostgreSQL/nginx/Python, creates the database with a random password, writes `.env`,
+migrates, starts the API (systemd) behind nginx, opens the firewall and checks that the API answers.
+Running it again is safe: it updates the code and keeps your `.env` and data.
+
+The manual steps below do the same thing one by one.
+
 Setup: PostgreSQL, the API run by gunicorn (2 workers, kept running by systemd), and nginx in front on port 80.
 Tested in production mode: the API uses about 180 MB.
 Replace `139.59.3.23` with your droplet's IP and `StrongDbPass123` with your own password.

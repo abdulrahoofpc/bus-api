@@ -31,6 +31,20 @@ class OfficeApiTests(TestCase):
         self.api.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         return token
 
+    def test_paging_never_repeats_rows(self):
+        for i in range(5):
+            Customer.objects.create(name=f"Customer {i}")
+        seen = []
+        for page in (1, 2, 3, 4, 99):
+            r = self.api.get("/api/office/r/customers/", {"page": page, "page_size": 2}).json()
+            self.assertEqual(r["count"], 6)
+            seen += [row["id"] for row in r["results"]]
+            if page >= 4:
+                self.assertEqual(r["results"], [])  # past the end: empty, not the last page again
+                self.assertIsNone(r["next"])
+        self.assertEqual(len(seen), 6)
+        self.assertEqual(len(set(seen)), 6)
+
     def test_definitions_follow_role(self):
         defs = self.api.get("/api/office/resources/").json()
         self.assertIn("users", defs)

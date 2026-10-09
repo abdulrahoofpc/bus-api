@@ -134,6 +134,14 @@ REST_FRAMEWORK = {
     "NUM_PROXIES": int(os.environ["DJANGO_NUM_PROXIES"]) if os.environ.get("DJANGO_NUM_PROXIES") else None,
 }
 
+# Shared cache (used for the login limit), so every gunicorn worker counts the same attempts.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": os.environ.get("DJANGO_CACHE_DIR", str(BASE_DIR / ".cache")),
+    }
+}
+
 # Login attempts allowed per client address (POST /api/auth/login/). Tests use a high limit.
 LOGIN_THROTTLE_RATE = os.environ.get("LOGIN_THROTTLE_RATE", "1000/min" if "test" in sys.argv else "10/min")
 
